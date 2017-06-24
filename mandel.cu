@@ -97,13 +97,13 @@ __device__ float march(ray r) {
 
 __global__ void d_main(
 	pixel* screen_buffer,
-	const size_t &width,
-	const size_t &height
+	const size_t width,
+	const size_t height
 ) {
 	size_t x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	size_t y = (blockIdx.y * blockDim.y) + threadIdx.y;
 	
-	if((x < width && y < height) && false) {
+	if(x < width && y < height) {
 		float min_w_h = (float) min(width, height);
 
 		float ar = (float) width / (float) height;
@@ -113,8 +113,9 @@ __global__ void d_main(
 		ray r = get_ray(u, v);
 		float c = march(r) * 255.0f;
 		float3 color = make_float3(c, c, c);
+	
+		screen_buffer[y * width + x] = color;
 	}
-	screen_buffer[y * width + x] = make_float3(255.0f, 255.0f, 255.0f);
 }
 
 int main(int argc, char** argv) {
