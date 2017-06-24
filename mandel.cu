@@ -2,10 +2,86 @@
 
 typedef float3 pixel;
 
+// Generic utils
+
 typedef struct {
 	float3 o;
 	float3 d;
 } ray;
+
+__device__ float3 operator+(const float3 &a, const float3 &b) {
+	return make_float3(a.x + b.x,a.y + b.y,a.z + b.z);
+}
+
+__device__ float3 operator*(const float3 &a, const float &b) {
+	return make_float3(a.x * b, a.y * b, a.z * b);
+}
+
+__device__ float length(const float3 &vec) {
+	return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+__device__ float3 normalize(const float3 vec) {
+	float inverted_len = 1.0f / length(vec);
+	return vec * inverted_len;
+}
+
+
+// Raymarcher
+
+__device__ ray get_ray(float u, float v) {
+	ray r;
+	r.o = make_float3(-3.0, 0.0, 0.0);
+	r.d = normalize(make_float3(1.0, u, v));
+	return r;
+}
+
+__device__ float mandelbulb_de(float3 pos) {
+	// pos = fmod(fabs(pos), 4.0) - 2.0;
+	float3 z = pos;
+	float dr = 1.0;
+	float r = 0.0;
+	int Iterations = 4;
+	float Bailout = 4.0;
+	float Power = 8.0;
+	for(int i = 0; i < Iterations; i++) {
+		r = length(z);
+		if (r > Bailout) break;
+
+		// convert to polar coordinates
+		float theta = acos(z.z / r);
+		float phi = atan2(z.y, z.x);
+		dr = pow(r, Power - 1.0) * Power * dr + 1.0;
+
+		// scale and rotate the point
+		float zr = pow(r, Power);
+		theta = theta * Power;
+		phi = phi * Power;
+
+		// convert back to cartesian coordinates
+		z = make_float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta)) * zr;
+		z = z + pos;
+		//z += pos * cos(time * 2.0);
+	}
+	return 0.5 * log(r) * r / dr;
+}
+
+__device__ float march(ray r) {
+	float total_dist = 0.0;
+	int steps;
+	int max_ray_steps = 64;
+	float min_distance = 0.002;
+	for (steps = 0; steps < max_ray_steps; ++steps) {
+		float3 p = r.o + r.d * total_dist;
+		float distance = mandelbulb_de(p);
+		total_dist += distance;
+		if (distance < min_distance) break;
+	}
+	return 1.0 - (float) steps / (float) max_ray_steps;
+}
+
+
+// Main kernel
 
 __global__ void d_main(
 	pixel* screen_buffer,
@@ -21,8 +97,8 @@ __global__ void d_main(
 int main(int argc, char** argv) {
 	printf("Mandelbulb\n");
 	
-	size_t width = 512;
-	size_t height = 512;
+	size_t width = 32;
+	size_t height = 32;
 	size_t num_pixels = width * height;
 
 	size_t group_width = 1;
@@ -44,6 +120,13 @@ int main(int argc, char** argv) {
 
 	// Read screen buffer from device
 	cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost);	
+
+	for(size_t y = 0;y < height;y++) {
+		for(size_t x = 0;x < width;x++) {
+			printf("%i ", (int) h_screen_buff[y * width + x].x);
+		}
+		printf("\n");
+	}
 
 	cudaFreeHost(h_screen_buff);
 	cudaFree(d_screen_buff);
