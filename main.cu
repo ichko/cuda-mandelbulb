@@ -142,6 +142,11 @@ void write_image(
 
 int main(int argc, char** argv) {
 	printf("Mandelbulb\n");
+
+	if(argc < 7) {
+		std::cout << "Not enought params." << std::endl;
+		return 1;
+	}
 	
 	char* file_name = argv[1];
 	size_t width = atoi(argv[2]);
@@ -150,6 +155,12 @@ int main(int argc, char** argv) {
 
 	size_t group_width = atoi(argv[4]);
 	size_t group_height = atoi(argv[5]);
+
+	bool test = false;
+
+	if (*argv[6] == 't') {
+		test = true;
+	}
 
 	// Setup buffers
 	pixel* h_screen_buff;
@@ -161,22 +172,28 @@ int main(int argc, char** argv) {
 	dim3 group_dim(group_width, group_height);
 
 	// Execute on devicie
-	printf("Starting kernel execution...\n");
-	d_main<<<block_dim, group_dim>>>(d_screen_buff, width, height);
-	printf("Kernel execution ended.\n");
-
-	
 	clock_t t_start = clock();
-
-	printf("Reading screan buffer from device...\n");
-	check_result(cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost));
-	printf("Done.\n");
+	
+	if(!test)
+		printf("Starting kernel execution...\n");
+	d_main<<<block_dim, group_dim>>>(d_screen_buff, width, height);
+	if(!test)
+		printf("Kernel execution ended.\n");
+	
+	if(!test) {
+		printf("Reading screan buffer from device...\n");
+		check_result(cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost));
+		printf("Done.\n");
+	}
 
 	printf("Time taken: %.4fs\n", (double) (clock() - t_start) / CLOCKS_PER_SEC);	
-	
-	printf("Writing to file...\n");
-	write_image(file_name, h_screen_buff, width, height);
-	printf("Done\n");
+
+	if(!test){
+		printf("Writing to file...\n");
+		write_image(file_name, h_screen_buff, width, height);
+		printf("Done\n");
+	}
+
 	//for(size_t y = 0;y < height;y++) {
 	//	for(size_t x = 0;x < width;x++) {
 	//		printf("%i ", (int) h_screen_buff[y * width + x].x);
