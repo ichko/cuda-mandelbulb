@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <time.h>
 #include <stdio.h>
 
 
@@ -142,13 +143,13 @@ void write_image(
 int main(int argc, char** argv) {
 	printf("Mandelbulb\n");
 	
-	char file_name[] = "image.ppm";
-	size_t width = 1024;
-	size_t height = 1024;
+	char* file_name = argv[1];
+	size_t width = atoi(argv[2]);
+	size_t height = atoi(argv[3]);
 	size_t num_pixels = width * height;
 
-	size_t group_width = 1;
-	size_t group_height = 1;
+	size_t group_width = atoi(argv[4]);
+	size_t group_height = atoi(argv[5]);
 
 	// Setup buffers
 	pixel* h_screen_buff;
@@ -164,10 +165,15 @@ int main(int argc, char** argv) {
 	d_main<<<block_dim, group_dim>>>(d_screen_buff, width, height);
 	printf("Kernel execution ended.\n");
 
+	
+	clock_t t_start = clock();
+
 	printf("Reading screan buffer from device...\n");
 	check_result(cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost));
 	printf("Done.\n");
 
+	printf("Time taken: %.4fs\n", (double) (clock() - t_start) / CLOCKS_PER_SEC);	
+	
 	printf("Writing to file...\n");
 	write_image(file_name, h_screen_buff, width, height);
 	printf("Done\n");
