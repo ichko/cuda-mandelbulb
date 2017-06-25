@@ -56,7 +56,7 @@ __device__ float mandelbulb_de(float3 pos) {
 	float r = 0.0;
 	int Iterations = 4;
 	float Bailout = 4.0;
-	float Power = 8.0;
+	float Power = 16.0;
 	for(int i = 0; i < Iterations; i++) {
 		r = length(z);
 		if (r > Bailout) break;
@@ -141,7 +141,7 @@ void write_image(
 }
 
 int main(int argc, char** argv) {
-	printf("Mandelbulb\n");
+	// printf("Mandelbulb\n");
 
 	if(argc < 7) {
 		std::cout << "Not enought params." << std::endl;
@@ -180,13 +180,13 @@ int main(int argc, char** argv) {
 	if(!test)
 		printf("Kernel execution ended.\n");
 	
-	if(!test) {
+	if(!test)
 		printf("Reading screan buffer from device...\n");
-		check_result(cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost));
+	check_result(cudaMemcpy(h_screen_buff, d_screen_buff, num_pixels * sizeof(pixel), cudaMemcpyDeviceToHost));
+	if(!test)
 		printf("Done.\n");
-	}
 
-	printf("Time taken: %.4fs\n", (double) (clock() - t_start) / CLOCKS_PER_SEC);	
+	printf("Time taken (ms): %i\n", (int) ((double) (clock() - t_start) / CLOCKS_PER_SEC * 1000.0f));	
 
 	if(!test){
 		printf("Writing to file...\n");
