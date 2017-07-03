@@ -1,7 +1,6 @@
-#include <iostream>
+#include <stdio.h>
 #include <fstream>
 #include <time.h>
-#include <stdio.h>
 
 
 // Generic utils
@@ -127,24 +126,24 @@ void write_image(
 	size_t width,
 	size_t height
 ) {
-	std::ofstream image(file_name);
-	image << "P3" << std::endl;
-	image << width << " " << height << std::endl;
-	image << 255 << std::endl;
+	FILE* image = fopen(file_name, "w");
+	fprintf(image, "P3\n");
+	fprintf(image, "%i %i\n", width, height);
+	fprintf(image, "%i\n", 255);
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			float3 pixel = screen_buff[y * width + x];
-			image << (int) pixel.x << " " << (int) pixel.y << " " << (int) pixel.z << std::endl;
+			fprintf(image, "%i %i %i\n", (int) pixel.x, (int) pixel.y, (int) pixel.z);
 		}
 	}
-	image.close();
+	fclose(image);
 }
 
 int main(int argc, char** argv) {
 	// printf("Mandelbulb\n");
 
 	if(argc < 7) {
-		std::cout << "Not enought params." << std::endl;
+		printf("Not enought params.\n");
 		return 1;
 	}
 	

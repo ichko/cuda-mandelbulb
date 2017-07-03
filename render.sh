@@ -1,8 +1,8 @@
 #!/bin/bash
 
 image_name=image.ppm
-width=8192
-height=8192
+width=1024
+height=1024
 block_size_w=32
 block_size_h=32
 
